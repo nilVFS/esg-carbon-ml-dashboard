@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import Calculator from './components/Calculator';
 import ChartComponent from './components/ChartComponent';
 import PdfExporter from './components/PdfExporter';
-// import forecastData from './data/forecast.json';
-import forecastData from './data/forecast.js';
+import forecastData from './data/forecast.json' with { type: 'json' };
 
 function App() {
   const [calculation, setCalculation] = useState(null);
