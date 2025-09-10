@@ -1,44 +1,34 @@
 import React from 'react';
 import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { linearRegression } from '../utils/regression';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const ChartComponent = ({ data, forecast }) => {
-  if (!data) return null;
+const ChartComponent = ({ dataPoints }) => {
+  if (!dataPoints || dataPoints.length < 2) return null;
 
-  const month7 = forecast?.month7 || 0;
-  const month8 = forecast?.month8 || 0;
-  const month9 = forecast?.month9 || 0;
+  const x = dataPoints.map(p => p.month);
+  const y = dataPoints.map(p => p.volume * 34.0 * 56.1 * 0.001);
+
+
+  const model = linearRegression(x, y);
+
+  const lastMonth = Math.max(...x);
+  const forecastMonths = [lastMonth + 1, lastMonth + 2, lastMonth + 3];
+  const forecastEmissions = forecastMonths.map(m => model.predict(m));
+
+  const labels = [
+    ...x.map(m => `Месяц ${m}`),
+    ...forecastMonths.map(m => `Месяц ${m} (прогноз)`),
+  ];
 
   const chartData = {
-    labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл (прогноз)', 'Авг (прогноз)', 'Сен (прогноз)'],
+    labels,
     datasets: [
       {
         label: 'Выбросы CO₂ (тонны)',
-        data: [
-          19074, 20027, 20981, 21935, 22889, 23843,
-          month7,
-          month8,
-          month9
-        ],
+        data: [...y, ...forecastEmissions],
         borderColor: 'rgb(75, 192, 192)',
         backgroundColor: 'rgba(75, 192, 192, 0.5)',
         tension: 0.3,
@@ -58,20 +48,14 @@ const ChartComponent = ({ data, forecast }) => {
         text: 'Динамика выбросов CO₂ (факт + прогноз)',
         font: { size: 16, weight: 'bold' },
       },
-      tooltip: {
-        mode: 'index',
-        intersect: false,
-      },
     },
     scales: {
       x: {
         title: { display: true, text: 'Период' },
-        grid: { display: false },
       },
       y: {
         title: { display: true, text: 'Тонны CO₂' },
         beginAtZero: false,
-        grid: { color: '#e0e0e0' },
       },
     },
   };
@@ -79,10 +63,12 @@ const ChartComponent = ({ data, forecast }) => {
   return (
     <div style={{ height: '400px', width: '100%' }}>
       <Line data={chartData} options={options} />
+      <div style={{ marginTop: '20px', padding: '10px', background: '#e3f2fd', borderRadius: '4px' }}>
+        <strong>Модель:</strong> y = {model.slope.toFixed(2)} * x + {model.intercept.toFixed(2)}
+      </div>
     </div>
   );
 };
 
 export default ChartComponent;
-
 
