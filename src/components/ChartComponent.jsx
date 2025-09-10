@@ -8,9 +8,8 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 const ChartComponent = ({ dataPoints }) => {
   if (!dataPoints || dataPoints.length < 2) return null;
 
+  const y = dataPoints.map(p => p.emission);
   const x = dataPoints.map(p => p.month);
-  const y = dataPoints.map(p => p.volume * 34.0 * 56.1 * 0.001);
-
 
   const model = linearRegression(x, y);
 
@@ -19,8 +18,8 @@ const ChartComponent = ({ dataPoints }) => {
   const forecastEmissions = forecastMonths.map(m => model.predict(m));
 
   const labels = [
-    ...x.map(m => `Месяц ${m}`),
-    ...forecastMonths.map(m => `Месяц ${m} (прогноз)`),
+    ...x.map(m => `Период ${m}`),
+    ...forecastMonths.map(m => `Период ${m} (прогноз)`),
   ];
 
   const chartData = {
@@ -33,7 +32,6 @@ const ChartComponent = ({ dataPoints }) => {
         backgroundColor: 'rgba(75, 192, 192, 0.5)',
         tension: 0.3,
         pointRadius: 4,
-        pointHoverRadius: 6,
       },
     ],
   };

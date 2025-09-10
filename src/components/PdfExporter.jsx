@@ -36,7 +36,7 @@ const PdfExporter = ({ dataPoints }) => {
                 `<tr>
                   <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${p.month}</td>
                   <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${p.volume}</td>
-                  <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${(p.volume * 34.0 * 56.1 * 0.001).toFixed(2)}</td>
+                  <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${p.emission.toFixed(2)}</td>
                 </tr>`
             )
             .join('')}

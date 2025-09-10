@@ -26,3 +26,4 @@ const coefficients = {
 };
 
 export default coefficients;
+
