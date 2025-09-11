@@ -8,7 +8,8 @@ const Calculator = ({ onCalculate }) => {
 
   const calculateEmission = () => {
     const coef = coefficients[fuelType];
-    const emissionCO2 = fuelVolume * coef.LHV * coef.CO2 * 0.001;
+    const energy_TJ = fuelVolume * coef.NCV * 0.001;
+    const emissionCO2 = energy_TJ * coef.EF_CO2;
     const emissionCH4 = fuelVolume * coef.LHV * coef.CH4 * 0.001;
     const emissionN2O = fuelVolume * coef.LHV * coef.N2O * 0.001;
 
