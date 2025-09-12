@@ -1,15 +1,32 @@
 import React from 'react';
 import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import { linearRegression } from '../utils/regression';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const ChartComponent = ({ dataPoints }) => {
-  if (!dataPoints || dataPoints.length < 2) return null;
+  if (!dataPoints || dataPoints.length < 2) return <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>Нет данных для построения графика</div>;
 
-  const y = dataPoints.map(p => p.emission);
   const x = dataPoints.map(p => p.month);
+  const y = dataPoints.map(p => parseFloat(p.emissionCO2));
 
   const model = linearRegression(x, y);
 
@@ -32,6 +49,7 @@ const ChartComponent = ({ dataPoints }) => {
         backgroundColor: 'rgba(75, 192, 192, 0.5)',
         tension: 0.3,
         pointRadius: 4,
+        pointHoverRadius: 6,
       },
     ],
   };
@@ -59,7 +77,7 @@ const ChartComponent = ({ dataPoints }) => {
   };
 
   return (
-    <div style={{ height: '400px', width: '100%' }}>
+    <div style={{ height: '400px', width: '100%', marginTop: '20px' }}>
       <Line data={chartData} options={options} />
       <div style={{ marginTop: '20px', padding: '10px', background: '#e3f2fd', borderRadius: '4px' }}>
         <strong>Модель:</strong> y = {model.slope.toFixed(2)} * x + {model.intercept.toFixed(2)}
