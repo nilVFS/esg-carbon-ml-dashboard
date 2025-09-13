@@ -15,6 +15,15 @@ const DataInputTable = ({ onDataSubmit }) => {
     setVolumes([...volumes, 0]);
   };
 
+  const deleteRow = (index) => {
+    if (volumes.length <= 2) {
+      alert('Нужно минимум 2 точки данных!');
+      return;
+    }
+    const newVolumes = volumes.filter((_, i) => i !== index);
+    setVolumes(newVolumes);
+  };
+
   const handleSubmit = () => {
     if (volumes.length < 2) {
       alert('Нужно минимум 2 точки данных!');
@@ -26,12 +35,12 @@ const DataInputTable = ({ onDataSubmit }) => {
 
     const dataPoints = volumes.map((volume, index) => {
       const energy_TJ = volume * coef.NCV * 0.001;
-      const emissionCO2 = energy_TJ * coef.EF_CO2;
+      const emissionCO2 = (energy_TJ * coef.EF_CO2).toFixed(2);
       return {
         month: index + 1,
         volume: volume,
         unit: unit,
-        emissionCO2: emissionCO2.toFixed(2),
+        emissionCO2: emissionCO2,
         fuelType: fuelType
       };
     });
@@ -75,6 +84,7 @@ const DataInputTable = ({ onDataSubmit }) => {
               Объём топлива ({fuelCoefficients[fuelType]?.unit})
             </th>
             <th style={tableHeaderStyle}>Выбросы CO₂ (тонны)</th>
+            <th style={tableHeaderStyle}>Действие</th>
           </tr>
         </thead>
         <tbody>
@@ -99,6 +109,25 @@ const DataInputTable = ({ onDataSubmit }) => {
                 <td style={{ ...tableCellStyle, background: '#f0f7ff', fontWeight: '500' }}>
                   {emissionCO2}
                 </td>
+                <td style={{ ...tableCellStyle, padding: '8px' }}>
+                  <button
+                    onClick={() => deleteRow(index)}
+                    style={{
+                      padding: '4px 8px',
+                      background: '#dc3545',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      minWidth: '60px',
+                    }}
+                    onMouseEnter={(e) => (e.target.style.background = '#c82333')}
+                    onMouseLeave={(e) => (e.target.style.background = '#dc3545')}
+                  >
+                    Удалить
+                  </button>
+                </td>
               </tr>
             );
           })}
@@ -118,7 +147,7 @@ const DataInputTable = ({ onDataSubmit }) => {
           marginRight: '10px',
         }}
       >
-        Добавить период
+        ➕ Добавить период
       </button>
 
       <button
@@ -133,7 +162,7 @@ const DataInputTable = ({ onDataSubmit }) => {
           fontSize: '14px',
         }}
       >
-        Построить модель
+        📈 Построить модель
       </button>
     </div>
   );
