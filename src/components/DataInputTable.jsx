@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { fuelCoefficients, fuelTypes } from '../data/coefficients';
+import { calculateCO2Emission } from '../utils/calculation';
 
-const DataInputTable = ({ onDataSubmit }) => {
-  const [fuelType, setFuelType] = useState("природный газ");
+const DataInputTable = ({ onDataSubmit, initialFuelType = "природный газ" }) => {
+  const [fuelType, setFuelType] = useState(initialFuelType);
   const [volumes, setVolumes] = useState([10000, 10500, 11000, 11500, 12000, 12500]);
 
   const updateVolume = (index, value) => {
@@ -33,17 +34,12 @@ const DataInputTable = ({ onDataSubmit }) => {
     const coef = fuelCoefficients[fuelType];
     const unit = coef.unit;
 
-    const dataPoints = volumes.map((volume, index) => {
-      const energy_TJ = volume * coef.NCV * 0.001;
-      const emissionCO2 = (energy_TJ * coef.EF_CO2).toFixed(2);
-      return {
-        month: index + 1,
-        volume: volume,
-        unit: unit,
-        emissionCO2: emissionCO2,
-        fuelType: fuelType
-      };
-    });
+    const dataPoints = volumes.map((volume, index) => ({
+      month: index + 1,
+      volume: volume,
+      unit: unit,
+      emissionCO2: calculateCO2Emission(volume, fuelType).toFixed(2),
+    }));
 
     onDataSubmit(dataPoints);
   };
@@ -89,9 +85,7 @@ const DataInputTable = ({ onDataSubmit }) => {
         </thead>
         <tbody>
           {volumes.map((volume, index) => {
-            const coef = fuelCoefficients[fuelType];
-            const energy_TJ = volume * coef.NCV * 0.001;
-            const emissionCO2 = (energy_TJ * coef.EF_CO2).toFixed(2);
+            const emissionCO2 = calculateCO2Emission(volume, fuelType).toFixed(2);
 
             return (
               <tr key={index}>
