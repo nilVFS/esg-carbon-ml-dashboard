@@ -1,96 +1,161 @@
 import React from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { fuelCoefficients } from '../data/coefficients';
 
 const PdfExporter = ({ fuelEntries, totalForecast, allDataPoints }) => {
   if (!allDataPoints || allDataPoints.length < 2) return null;
 
-  const generatePdf = () => {
+  const generatePdf = async () => {
     let htmlContent = `
-      <h2 style="text-align: center;">Отчёт по моделированию выбросов ПГ</h2>
+      <h2 style="text-align: center; color: #1a3a6d;">Отчёт по моделированию выбросов ПГ</h2>
+      <hr style="margin: 20px 0; border: 1px solid #ddd;">
     `;
 
     // Таблицы по каждому топливу
-    fuelEntries.forEach(entry => {
-      if (entry.dataPoints.length < 2) return;
-      const coef = fuelCoefficients[entry.fuelType];
-      const unit = coef?.unit || 'тыс. м³';
-
-      htmlContent += `
-        <h3 style="margin-top: 30px;">Источник: ${entry.fuelType} (${unit})</h3>
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-          <thead>
-            <tr>
-              <th style="border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">Период №</th>
-              <th style="border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">Объём топлива (${unit})</th>
-              <th style="border: 1px solid #ddd; padding: 8px; background: #f8f9fa;">Выбросы CO₂ (тонны)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${entry.dataPoints.map(p => `
-              <tr>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${p.month}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${p.volume}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${p.emissionCO2}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-    });
-
-    // Общий прогноз
     htmlContent += `
-      <h3 style="margin-top: 40px;">Суммарный прогноз на 3 периода</h3>
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <h3 style="margin-top: 30px;">1. Источники выбросов и исходные данные</h3>
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
         <thead>
-          <tr>
-            <th style="border: 1px solid #ddd; padding: 8px; background: #e3f2fd;">Период</th>
-            <th style="border: 1px solid #ddd; padding: 8px; background: #e3f2fd;">Прогноз CO₂ (тонны)</th>
+          <tr style="background: #f8f9fa;">
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Источник</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Тип топлива</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Периоды</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Объём (ед.)</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Выбросы CO₂ (т)</th>
           </tr>
         </thead>
         <tbody>
-          ${totalForecast.months.map((m, i) => `
-            <tr>
-              <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">Период ${m}</td>
-              <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${totalForecast.emissions[i].toFixed(2)}</td>
-            </tr>
-          `).join('')}
+    `;
+
+    fuelEntries.forEach((entry, idx) => {
+      const totalEmission = entry.dataPoints.reduce((sum, p) => sum + parseFloat(p.emissionCO2), 0).toFixed(2);
+      
+      htmlContent += `
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${idx + 1}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${entry.fuelType}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${entry.dataPoints.length}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${entry.dataPoints.map(p => p.volume).join(', ')}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${totalEmission}</td>
+        </tr>
+      `;
+    });
+
+    htmlContent += `
         </tbody>
       </table>
+    `;
 
-      <h3>Итого выбросов по всем источникам:</h3>
-      <p><strong>Суммарные выбросы за 6 месяцев:</strong> ${(allDataPoints.reduce((sum, p) => sum + parseFloat(p.emissionCO2), 0)).toFixed(2)} тонн CO₂</p>
-      <p><strong>Прогноз на 3 месяца вперёд:</strong> ${totalForecast.emissions.reduce((sum, e) => sum + e, 0).toFixed(2)} тонн CO₂</p>
+    // Суммарный прогноз (в виде текста)
+    htmlContent += `
+      <h3 style="margin-top: 40px;">2. Прогноз выбросов CO₂ (суммарный по всем источникам)</h3>
+      <table style="width: 50%; margin: 15px auto; border-collapse: collapse; font-size: 14px;">
+        <thead>
+          <tr style="background: #e3f2fd;">
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Период</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Прогноз CO₂ (тонны)</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
 
-      <p style="font-size: 12px; margin-top: 30px; color: #666;">
-        Расчёт выполнен в браузере. Все коэффициенты взяты из Приказа Минприроды РФ №371 (Таблица 1.1).
+    totalForecast.months.forEach((month, i) => {
+      htmlContent += `
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">Период ${month}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${totalForecast.emissions[i].toFixed(2)}</td>
+        </tr>
+      `;
+    });
+
+    htmlContent += `
+          </tbody>
+        </table>
+    `;
+
+    // Итоговая сводка
+    const totalCurrentEmissions = allDataPoints.reduce((sum, p) => sum + parseFloat(p.emissionCO2), 0).toFixed(2);
+    const totalForecastSum = totalForecast.emissions.reduce((sum, e) => sum + e, 0).toFixed(2);
+
+    htmlContent += `
+      <h3 style="margin-top: 40px;">3. Сводка и выводы</h3>
+      <table style="width: 80%; margin: 20px auto; border-collapse: collapse; font-size: 15px;">
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 10px; width: 40%;"><strong>Суммарные выбросы за исторические периоды</strong></td>
+          <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">${totalCurrentEmissions} тонн CO₂</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 10px;"><strong>Прогноз на следующие 3 периода</strong></td>
+          <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">${totalForecastSum} тонн CO₂</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 10px;"><strong>Суммарный рост выбросов (прогноз/факт)</strong></td>
+          <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">${((totalForecastSum / totalCurrentEmissions) * 100 - 100).toFixed(1)}%</td>
+        </tr>
+      </table>
+
+      <h3 style="margin-top: 40px;">4. Методология</h3>
+      <ul style="font-size: 14px; line-height: 1.5; margin-left: 20px; margin-bottom: 30px;">
+        <li>Использованы коэффициенты NCV и EF_CO2 из Таблицы 1.1 Приказа №371.</li>
+        <li>Расчёт выбросов: E = V × NCV × 0.001 × EF_CO2 (перевод в ТДж → тонны CO₂).</li>
+        <li>Прогноз построен методом линейной регрессии на основе введённых данных.</li>
+        <li>Представлены данные по всем выбранным видам топлива.</li>
+      </ul>
+
+      <p style="font-size: 12px; color: #666; text-align: center; margin-top: 50px;">
+        Этот отчёт сгенерирован автоматически в браузере. Не является официальным документом.
       </p>
     `;
 
-    const element = document.createElement('div');
-    element.innerHTML = htmlContent;
-    element.style.padding = '30px';
-    element.style.fontFamily = 'Arial, sans-serif';
-    element.style.fontSize = '14px';
+    const contentDiv = document.createElement('div');
+    contentDiv.innerHTML = htmlContent;
+    contentDiv.style.padding = '40px';
+    contentDiv.style.fontFamily = 'Arial, sans-serif';
+    contentDiv.style.fontSize = '14px';
+    contentDiv.style.color = '#333';
+    contentDiv.style.backgroundColor = 'white';
 
-    document.body.appendChild(element);
+    document.body.appendChild(contentDiv);
 
-    html2canvas(element)
-      .then(canvas => {
-        document.body.removeChild(element);
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save('Прогноз_выбросов_ПГ_многотопливный.pdf');
-      })
-      .catch(error => {
-        console.error('Ошибка PDF:', error);
-        alert('Ошибка генерации PDF');
+    // Захват графика как изображения
+    const chartContainer = document.getElementById('chart-container');
+    if (chartContainer) {
+      const canvas = await html2canvas(chartContainer, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: chartContainer.offsetWidth,
+        height: chartContainer.offsetHeight,
       });
+      const chartImgData = canvas.toDataURL('image/png');
+
+      // весь контент (текст + таблицы)
+      const fullCanvas = await html2canvas(contentDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+      });
+      const fullImgData = fullCanvas.toDataURL('image/png');
+
+      document.body.removeChild(contentDiv);
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      pdf.addImage(fullImgData, 'PNG', 0, 0, pageWidth, pageHeight);
+
+      pdf.addPage();
+      const imgWidth = pageWidth * 0.9;
+      const imgHeight = (imgWidth / chartContainer.offsetWidth) * chartContainer.offsetHeight * 2; // учитываем масштаб 2
+      pdf.addImage(chartImgData, 'PNG', (pageWidth - imgWidth) / 2, 20, imgWidth, imgHeight);
+
+      pdf.save('Отчёт_выбросов_ПГ_многотопливный.pdf');
+    } else {
+      alert('График не найден. Пожалуйста, перезагрузите страницу и попробуйте снова.');
+    }
   };
 
   return (
